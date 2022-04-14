@@ -1,9 +1,9 @@
-require('dotenv').config()
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const { randomUUID } = require("crypto");
-const Notification = require("./models/notification");
+const User = require("./models/user");
 const mongoose = require("mongoose");
 
 const PORT = process.env.PORT || 5000;
@@ -47,9 +47,9 @@ const notifications = [
   },
 ];
 
-const excestingIndexes = Array.apply(null, {
-  length: notifications.length,
-}).map(Number.call, Number);
+// const excestingIndexes = Array.apply(null, {
+//   length: notifications.length,
+// }).map(Number.call, Number);
 
 let interval;
 const period = Math.floor(Math.random() * 10) + 5;
@@ -61,6 +61,17 @@ io.on("connection", (socket) => {
   if (interval) {
     clearInterval(interval);
   }
+  const newUser = {
+    userId: userId,
+    notifications: [],
+  };
+  User.create(newUser, (error, data) => {
+    if (error) {
+      console.log("Error", error.message);
+    } else {
+      console.log(data);
+    }
+  });
   interval = setInterval(() => getApiAndEmit(socket), period * 1000);
   socket.on("disconnect", () => {
     console.log("Client disconnected");
@@ -68,16 +79,32 @@ io.on("connection", (socket) => {
   });
 
   socket.on("add-notification", function (data, callback) {
-    // const foundIndex = notifications.findIndex(data.notification);
-    // excestingIndexes.filter((index) => foundIndex !== index);
-    const notification = { ...data.notification, userId: userId };
-    Notification.create(notification, (error, data) => {
+    console.log(userId);
+    User.findOneAndUpdate(
+      { userId: userId },
+      {
+        $push: { notifications: data.notification },
+      },
+      {
+        new: true,
+      }
+    ).exec((error, result) => {
       if (error) {
         console.log("Error", error.message);
       } else {
-        console.log(data);
+        console.log(result);
       }
     });
+    // const foundIndex = notifications.findIndex(data.notification);
+    // excestingIndexes.filter((index) => foundIndex !== index);
+    // const notification = { ...data.notification, userId: userId };
+    // Notification.create(notification, (error, data) => {
+    //   if (error) {
+    //     console.log("Error", error.message);
+    //   } else {
+    //     console.log(data);
+    //   }
+    // });
   });
 });
 

@@ -34,6 +34,7 @@ const App: React.FC = () => {
 
   return (
     <>
+      <h1>Custom Notifications Assignment</h1>
       {notification ? (
         <>
           {show && (
