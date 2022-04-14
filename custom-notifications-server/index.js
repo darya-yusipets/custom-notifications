@@ -1,31 +1,17 @@
+require('dotenv').config()
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
-// const firebase = require("firebase");
-const mongoose = require("mongoose");
 const { randomUUID } = require("crypto");
-const config = require("config");
-var Notification = require("./models/notification");
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyCzmTpy1uMSusbmcP9naiSb2gnLqXLSgws",
-//   authDomain: "custom-notifications-49842.firebaseapp.com",
-//   projectId: "custom-notifications-49842",
-//   storageBucket: "custom-notifications-49842.appspot.com",
-//   messagingSenderId: "390440882420",
-//   appId: "1:390440882420:web:53b9983028421ebbd14ea1",
-//   measurementId: "G-LQ2TLK75BS",
-// };
-
-// firebase.initializeApp(firebaseConfig);
-// const db = firebase.firestore();
+const Notification = require("./models/notification");
+const mongoose = require("mongoose");
 
 const PORT = process.env.PORT || 5000;
-const test = require("./routes/test");
+// const test = require("./routes/test");
 
 const app = express();
 
-app.use(test);
+// app.use(test);
 
 const server = http.createServer(app);
 
@@ -34,6 +20,12 @@ const io = socketIo(server, {
     origin: "http://localhost:3000",
     methods: ["GET", "POST"],
   },
+});
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useCreateIndex: true,
 });
 
 const notifications = [
@@ -76,18 +68,16 @@ io.on("connection", (socket) => {
   });
 
   socket.on("add-notification", function (data, callback) {
-    // console.log(data);
     // const foundIndex = notifications.findIndex(data.notification);
     // excestingIndexes.filter((index) => foundIndex !== index);
-    const notification = {...data, userId: userId};
-    console.log(notification);
-    // Notification.create(notification, (error, data) => {
-    //   if (error) {
-    //     return next(error);
-    //   } else {
-    //     console.log(data);
-    //   }
-    // });
+    const notification = { ...data.notification, userId: userId };
+    Notification.create(notification, (error, data) => {
+      if (error) {
+        console.log("Error", error.message);
+      } else {
+        console.log(data);
+      }
+    });
   });
 });
 
@@ -107,18 +97,4 @@ const getApiAndEmit = (socket) => {
   socket.emit("NotificationsAPI", { ...notification, duration });
 };
 
-// async function start() {
-//   try {
-//     await mongoose.connect(config.get("mongoUri"), {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
-//     app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
-//   } catch (e) {
-//     console.log("Server Error", e.message);
-//     process.exit(1);
-//   }
-// }
-
-// start();
 server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
