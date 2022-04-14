@@ -1,14 +1,14 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import { NotificationProps } from "./../types/index";
 import { SocketContext } from "../context/socket";
-import { makeStyles } from '@mui/styles';
+import { makeStyles } from "@mui/styles";
 
 const useStyles = makeStyles({
   notification: {
-    '&:hover': {
-      cursor: 'pointer',
+    "&:hover": {
+      cursor: "pointer",
     },
   },
 });
@@ -19,6 +19,7 @@ const Notification: React.FC<NotificationProps> = (
   const { type, message } = props;
   const classes = useStyles();
   const socket = useContext(SocketContext);
+  const [show, setShow] = useState(true);
 
   const handleClick = () => {
     socket.emit(
@@ -33,13 +34,16 @@ const Notification: React.FC<NotificationProps> = (
         console.log(data);
       }
     );
-  }
-  
+    setShow(false);
+  };
+
   return (
     <div className={classes.notification} onClick={handleClick}>
-      <Stack sx={{ width: "100%" }} spacing={2}>
-        <Alert severity={type}>{message}</Alert>
-      </Stack>
+      {show && (
+        <Stack sx={{ width: "100%" }} spacing={2}>
+          <Alert severity={type}>{message}</Alert>
+        </Stack>
+      )}
     </div>
   );
 };
