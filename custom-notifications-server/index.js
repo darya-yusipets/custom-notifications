@@ -5,6 +5,7 @@ const socketIo = require("socket.io");
 const { randomUUID } = require("crypto");
 const User = require("./models/user");
 const mongoose = require("mongoose");
+const { transformMessage } = require("./utils/transform-message");
 
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -22,6 +23,7 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
   useCreateIndex: true,
 });
+mongoose.set('useFindAndModify', false);
 
 let notifications = [];
 let interval;
@@ -34,7 +36,11 @@ io.on("connection", (socket) => {
   notifications = [
     {
       type: "info",
-      message: "Big sale next week\nNew auction next month",
+      message: "Big sale next week",
+    },
+    {
+      type: "info",
+      message: "New auction next month",
     },
     {
       type: "warning",
@@ -63,7 +69,7 @@ io.on("connection", (socket) => {
       console.log(data);
     }
   });
-  interval = setInterval(() => getApiAndEmit(socket), period * 1000);
+  interval = setInterval(() => emitNotification(socket), period * 1000);
   socket.on("disconnect", () => {
     console.log("Client disconnected");
     clearInterval(interval);
@@ -90,24 +96,11 @@ io.on("connection", (socket) => {
   });
 });
 
-const getApiAndEmit = (socket) => {
+const emitNotification = (socket) => {
   const index = Math.floor(Math.random() * notifications.length);
   const notification = notifications[index];
   if (notification) {
-    const message = notification.message.toLowerCase();
-    if (message.includes("sale") && !message.includes("!")) {
-      notification.message = notification.message.concat("!");
-    }
-    if (message.includes("new") && !message.includes("~~")) {
-      notification.message = "~~" + notification.message;
-    }
-    if (message.includes("limited edition")) {
-      const array = message.split(" ");
-      const transformedArray = array.map((x) =>
-        x === "limited" || x === "edition" ? x.toUpperCase() : x
-      );
-      notification.message = transformedArray.join(" ");
-    }
+    notification.message = transformMessage(notification);
     socket.emit("NotificationsAPI", { ...notification, duration });
   }
 };

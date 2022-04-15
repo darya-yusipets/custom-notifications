@@ -1,5 +1,5 @@
-const transformMessage = (notification) => {
-  const res = message;
+exports.transformMessage = (notification) => {
+  let res = notification.message;
   const message = notification.message.toLowerCase();
   if (message.includes("sale") && !message.includes("!")) {
     res = notification.message.concat("!");
@@ -9,12 +9,10 @@ const transformMessage = (notification) => {
   }
   if (message.includes("limited edition")) {
     const array = message.split(" ");
-    const transformedArray = array.map((x) =>
-      x === "limited" || x === "edition" ? x.toUpperCase() : x
+    const transformedArray = array.map((item) =>
+    item === "limited" || item === "edition" ? item.toUpperCase() : item
     );
     res = transformedArray.join(" ");
   }
   return res;
 };
-
-module.exports = transformMessage;
