@@ -6,6 +6,7 @@ const { randomUUID } = require("crypto");
 const User = require("./models/user");
 const mongoose = require("mongoose");
 const { transformMessage } = require("./utils/transform-message");
+const { getRandomTime } = require("./utils/get-random-time");
 
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -27,9 +28,7 @@ mongoose.set('useFindAndModify', false);
 
 let notifications = [];
 let interval;
-const period = Math.floor(Math.random() * 10) + 5;
-const duration = (Math.floor(Math.random() * 4) + 1) * 1000;
-const userId = randomUUID();
+let duration = 0;
 
 io.on("connection", (socket) => {
   console.log("New client connected");
@@ -55,13 +54,20 @@ io.on("connection", (socket) => {
       message: "Last items with limited time offer",
     },
   ];
+  
+  const userId = randomUUID();
+  const period = getRandomTime(5, 10);
+  duration = getRandomTime(1, 4);
+
   if (interval) {
     clearInterval(interval);
   }
+
   const newUser = {
     userId: userId,
     notifications: [],
   };
+
   User.create(newUser, (error, data) => {
     if (error) {
       console.log("Error", error.message);
@@ -69,7 +75,9 @@ io.on("connection", (socket) => {
       console.log(data);
     }
   });
-  interval = setInterval(() => emitNotification(socket), period * 1000);
+
+  interval = setInterval(() => emitNotification(socket), period);
+  
   socket.on("disconnect", () => {
     console.log("Client disconnected");
     clearInterval(interval);
