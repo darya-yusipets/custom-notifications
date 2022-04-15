@@ -7,12 +7,7 @@ const User = require("./models/user");
 const mongoose = require("mongoose");
 
 const PORT = process.env.PORT || 5000;
-// const test = require("./routes/test");
-
 const app = express();
-
-// app.use(test);
-
 const server = http.createServer(app);
 
 const io = socketIo(server, {
@@ -28,29 +23,7 @@ mongoose.connect(process.env.MONGO_URI, {
   useCreateIndex: true,
 });
 
-const notifications = [
-  {
-    type: "info",
-    message: "Big sale next week\nNew auction next month",
-  },
-  {
-    type: "warning",
-    message: "Limited edition books for next auction",
-  },
-  {
-    type: "success",
-    message: "New books with limited edition coming next week",
-  },
-  {
-    type: "error",
-    message: "Last items with limited time offer",
-  },
-];
-
-// const excestingIndexes = Array.apply(null, {
-//   length: notifications.length,
-// }).map(Number.call, Number);
-
+let notifications = [];
 let interval;
 const period = Math.floor(Math.random() * 10) + 5;
 const duration = (Math.floor(Math.random() * 4) + 1) * 1000;
@@ -58,6 +31,24 @@ const userId = randomUUID();
 
 io.on("connection", (socket) => {
   console.log("New client connected");
+  notifications = [
+    {
+      type: "info",
+      message: "Big sale next week\nNew auction next month",
+    },
+    {
+      type: "warning",
+      message: "Limited edition books for next auction",
+    },
+    {
+      type: "success",
+      message: "New books with limited edition coming next week",
+    },
+    {
+      type: "error",
+      message: "Last items with limited time offer",
+    },
+  ];
   if (interval) {
     clearInterval(interval);
   }
@@ -79,7 +70,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("add-notification", function (data, callback) {
-    console.log(userId);
     User.findOneAndUpdate(
       { userId: userId },
       {
@@ -92,36 +82,34 @@ io.on("connection", (socket) => {
       if (error) {
         console.log("Error", error.message);
       } else {
-        console.log(result);
+        notifications = notifications.filter(
+          (item) => item.message !== data.notification.message
+        );
       }
     });
-    // const foundIndex = notifications.findIndex(data.notification);
-    // excestingIndexes.filter((index) => foundIndex !== index);
-    // const notification = { ...data.notification, userId: userId };
-    // Notification.create(notification, (error, data) => {
-    //   if (error) {
-    //     console.log("Error", error.message);
-    //   } else {
-    //     console.log(data);
-    //   }
-    // });
   });
 });
 
 const getApiAndEmit = (socket) => {
   const index = Math.floor(Math.random() * notifications.length);
   const notification = notifications[index];
-  if (notification.message.toLowerCase().includes("sale")) {
-    notification.message = notification.message.concat("!");
-  } else if (notification.message.toLowerCase().includes("new")) {
-    notification.message = "~~" + notification.message;
-  } else if (notification.message.toLowerCase().includes("limited edition")) {
-    const array = notification.message.split(" ");
-    array.map((x) => (x.toLowerCase() === "limited" ? x.toUpperCase() : x));
-    array.map((x) => (x.toLowerCase() === "edition" ? x.toUpperCase() : x));
-    notification.message = array.join(" ");
+  if (notification) {
+    const message = notification.message.toLowerCase();
+    if (message.includes("sale") && !message.includes("!")) {
+      notification.message = notification.message.concat("!");
+    }
+    if (message.includes("new") && !message.includes("~~")) {
+      notification.message = "~~" + notification.message;
+    }
+    if (message.includes("limited edition")) {
+      const array = message.split(" ");
+      const transformedArray = array.map((x) =>
+        x === "limited" || x === "edition" ? x.toUpperCase() : x
+      );
+      notification.message = transformedArray.join(" ");
+    }
+    socket.emit("NotificationsAPI", { ...notification, duration });
   }
-  socket.emit("NotificationsAPI", { ...notification, duration });
 };
 
 server.listen(PORT, () => console.log(`Listening on port ${PORT}`));

@@ -26,11 +26,12 @@ const App: React.FC = () => {
     setShow(true);
     setTimeout(() => setShow(false), notification?.duration);
     socket.on("NotificationsAPI", (data: NotificationProps) => {
-      console.log(data);
       setNotification(data);
     });
     // return () => socket.disconnect();
   }, [notification, socket]);
+
+  console.log(notification);
 
   return (
     <>
