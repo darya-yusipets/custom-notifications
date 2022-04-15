@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import { SocketContext } from "./context/socket";
-import Notification from "./components/Notification";
+import Notification from "./components/Notification/Notification";
 import { NotificationProps } from "./types/index";
 import CircularProgress from "@mui/material/CircularProgress";
 import { makeStyles } from "@mui/styles";
+import Header from "./components/layout/Header/Header";
 
 const useStyles = makeStyles({
   loading: {
@@ -35,7 +36,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <h1>Custom Notifications Assignment</h1>
+      <Header />
       {notification ? (
         <>
           {show && (

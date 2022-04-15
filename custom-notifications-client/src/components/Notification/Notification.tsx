@@ -1,12 +1,13 @@
 import React, { useContext, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
-import { NotificationProps } from "./../types/index";
-import { SocketContext } from "../context/socket";
+import { NotificationProps } from "../../types/index";
+import { SocketContext } from "../../context/socket";
 import { makeStyles } from "@mui/styles";
 
 const useStyles = makeStyles({
   notification: {
+    padding: "20px 40px",
     "&:hover": {
       cursor: "pointer",
     },
@@ -22,18 +23,12 @@ const Notification: React.FC<NotificationProps> = (
   const [show, setShow] = useState(true);
 
   const handleClick = () => {
-    socket.emit(
-      "add-notification",
-      {
-        notification: {
-          type: type,
-          message: message,
-        },
+    socket.emit("add-notification", {
+      notification: {
+        type: type,
+        message: message,
       },
-      (data: NotificationProps) => {
-        console.log(data);
-      }
-    );
+    });
     setShow(false);
   };
 
