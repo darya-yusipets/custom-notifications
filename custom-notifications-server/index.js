@@ -24,11 +24,13 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
   useCreateIndex: true,
 });
-mongoose.set('useFindAndModify', false);
+mongoose.set("useFindAndModify", false);
 
 let notifications = [];
 let interval;
-let duration = 0;
+let duration;
+let period;
+let clicked;
 
 io.on("connection", (socket) => {
   console.log("New client connected");
@@ -54,20 +56,27 @@ io.on("connection", (socket) => {
       message: "Last items with limited time offer",
     },
   ];
-  
-  const userId = randomUUID();
-  const period = getRandomTime(5, 10);
+
+  // Time period for showing a new notification (Random between 5-10 seconds)
+  period = getRandomTime(5, 10);
+
+  // Time duration of showing the notification (Random between 1-4 seconds)
   duration = getRandomTime(1, 4);
+
+  console.log(period, duration)
 
   if (interval) {
     clearInterval(interval);
   }
 
+  // Every new browse of the app should treat the user as a new user
+  const userId = randomUUID();
   const newUser = {
     userId: userId,
     notifications: [],
   };
 
+  // Every new browse of the app should treat the user as a new user
   User.create(newUser, (error, data) => {
     if (error) {
       console.log("Error", error.message);
@@ -76,14 +85,17 @@ io.on("connection", (socket) => {
     }
   });
 
+  // The app should display random notifications for the user periodically
   interval = setInterval(() => emitNotification(socket), period);
-  
+
   socket.on("disconnect", () => {
     console.log("Client disconnected");
     clearInterval(interval);
   });
 
+  
   socket.on("add-notification", function (data, callback) {
+    // store on DB clicked notifications for each user
     User.findOneAndUpdate(
       { userId: userId },
       {
@@ -96,20 +108,24 @@ io.on("connection", (socket) => {
       if (error) {
         console.log("Error", error.message);
       } else {
+        // filter notifications to not display this clicked for the user again
         notifications = notifications.filter(
           (item) => item.message !== data.notification.message
         );
+        clicked = data.notification.message;
       }
     });
   });
 });
 
 const emitNotification = (socket) => {
+  // get random notifications
   const index = Math.floor(Math.random() * notifications.length);
   const notification = notifications[index];
+  console.log(notification)
   if (notification) {
     notification.message = transformMessage(notification);
-    socket.emit("NotificationsAPI", { ...notification, duration });
+    socket.emit("NotificationsAPI", { ...notification, duration, period });
   }
 };
 

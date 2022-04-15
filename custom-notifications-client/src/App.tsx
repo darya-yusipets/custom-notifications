@@ -22,27 +22,36 @@ const App: React.FC = () => {
   );
   const [show, setShow] = useState(true);
   const socket = useContext(SocketContext);
+  const [time, setTime] = useState(0);
+  const [isShown, setIsShown] = useState(true);
 
   useEffect(() => {
     setShow(true);
     setTimeout(() => setShow(false), notification?.duration);
     socket.on("NotificationsAPI", (data: NotificationProps) => {
       setNotification(data);
+      if (data.period && data.duration) {
+        setTime(data?.period + data?.duration);
+      }
     });
-    // return () => socket.disconnect();
-  }, [notification, socket]);
+  }, [socket, notification]);
 
-  console.log(notification);
+   // The app should not display the next (one upcoming only) notification for the user
+  const update = () => {
+    setIsShown(false);
+    setTimeout(() => setIsShown(true), time);
+  };
 
   return (
     <>
       <Header />
-      {notification ? (
+      {notification && show ? (
         <>
-          {show && (
+          {isShown && (
             <Notification
               type={notification.type}
               message={notification.message}
+              update={update}
             />
           )}
         </>

@@ -17,18 +17,20 @@ const useStyles = makeStyles({
 const Notification: React.FC<NotificationProps> = (
   props: NotificationProps
 ) => {
-  const { type, message } = props;
+  const { type, message, update } = props;
   const classes = useStyles();
   const socket = useContext(SocketContext);
   const [show, setShow] = useState(true);
 
   const handleClick = () => {
+    const notification = {
+      type: type,
+      message: message,
+    };
     socket.emit("add-notification", {
-      notification: {
-        type: type,
-        message: message,
-      },
+      notification: notification,
     });
+    update && update();
     setShow(false);
   };
 
