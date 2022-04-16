@@ -62,8 +62,6 @@ io.on("connection", (socket) => {
   // Time duration of showing the notification (Random between 1-4 seconds)
   duration = getRandomTime(1, 4);
 
-  console.log(period, duration)
-
   if (interval) {
     clearInterval(interval);
   }
@@ -92,7 +90,6 @@ io.on("connection", (socket) => {
     clearInterval(interval);
   });
 
-  
   socket.on("add-notification", function (data, callback) {
     // store on DB clicked notifications for each user
     User.findOneAndUpdate(
@@ -120,10 +117,14 @@ const emitNotification = (socket) => {
   // get random notifications
   const index = Math.floor(Math.random() * notifications.length);
   const notification = notifications[index];
-  console.log(notification)
   if (notification) {
     notification.message = transformMessage(notification);
-    socket.emit("NotificationsAPI", { ...notification, duration, period, isEmpty: false });
+    socket.emit("NotificationsAPI", {
+      ...notification,
+      duration,
+      period,
+      isEmpty: false,
+    });
   } else {
     socket.emit("NotificationsAPI", { notification: null, isEmpty: true });
   }
