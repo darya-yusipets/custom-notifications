@@ -20,39 +20,57 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<NotificationProps | null>(
     null
   );
-  const [show, setShow] = useState(true);
-  const socket = useContext(SocketContext);
-  const [time, setTime] = useState(0);
   const [isShown, setIsShown] = useState(true);
+  const socket = useContext(SocketContext);
+  const [timer, setTimer] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isSkipped, setIsSkipped] = useState(false);
 
   useEffect(() => {
-    setShow(true);
-    setTimeout(() => setShow(false), notification?.duration);
+    setIsShown(true);
+    setTimeout(() => setIsShown(false), notification?.duration);
     socket.on("NotificationsAPI", (data: NotificationProps) => {
       setNotification(data);
       if (data.period && data.duration) {
-        setTime(data?.period + data?.duration);
+        setTimer(data.period + data.duration);
+        setDuration(data.duration);
       }
     });
   }, [socket, notification]);
 
-   // The app should not display the next (one upcoming only) notification for the user
-  const update = () => {
-    setIsShown(false);
-    setTimeout(() => setIsShown(true), time);
+  // The app should not display the next (one upcoming only) notification for the user
+  const hideNotification = () => {
+    setTimeout(() => setIsSkipped(true), duration);
+    setTimeout(() => setIsSkipped(false), timer);
   };
+
+  if (notification?.isEmpty) {
+    socket.disconnect();
+    return (
+      <>
+        <Header />
+        <div className={classes.loading}>
+          <h2>No notifications to display</h2>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <Header />
-      {notification && show ? (
+      {notification && isShown ? (
         <>
-          {isShown && (
+          {!isSkipped ? (
             <Notification
               type={notification.type}
               message={notification.message}
-              update={update}
+              onHide={hideNotification}
             />
+          ) : (
+            <div className={classes.loading}>
+              <h2>Skipping one notification...</h2>
+            </div>
           )}
         </>
       ) : (

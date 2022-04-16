@@ -30,7 +30,6 @@ let notifications = [];
 let interval;
 let duration;
 let period;
-let clicked;
 
 io.on("connection", (socket) => {
   console.log("New client connected");
@@ -108,11 +107,10 @@ io.on("connection", (socket) => {
       if (error) {
         console.log("Error", error.message);
       } else {
-        // filter notifications to not display this clicked for the user again
+        // filter notifications so that clicked ones are not displayed to the user
         notifications = notifications.filter(
           (item) => item.message !== data.notification.message
         );
-        clicked = data.notification.message;
       }
     });
   });
@@ -125,7 +123,9 @@ const emitNotification = (socket) => {
   console.log(notification)
   if (notification) {
     notification.message = transformMessage(notification);
-    socket.emit("NotificationsAPI", { ...notification, duration, period });
+    socket.emit("NotificationsAPI", { ...notification, duration, period, isEmpty: false });
+  } else {
+    socket.emit("NotificationsAPI", { notification: null, isEmpty: true });
   }
 };
 
