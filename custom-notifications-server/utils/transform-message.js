@@ -1,6 +1,6 @@
 exports.transformMessage = (notification) => {
   let res = notification.message;
-  const message = notification.message.toLowerCase();
+  const message = res.toLowerCase();
 
   // If the text has the word “sale” in it, should append “!”
   // at the end of the notification text message
@@ -17,9 +17,11 @@ exports.transformMessage = (notification) => {
   // If the text has the words “limited edition” in it,
   // should change those words to all caps for the notification text message
   if (message.includes("limited edition")) {
-    const array = message.split(" ");
+    const array = res.split(" ");
     const transformedArray = array.map((item) =>
-      item === "limited" || item === "edition" ? item.toUpperCase() : item
+      item.toLowerCase() === "limited" || item.toLowerCase() === "edition"
+        ? item.toUpperCase()
+        : item
     );
     res = transformedArray.join(" ");
   }
