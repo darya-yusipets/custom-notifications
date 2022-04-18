@@ -29,7 +29,6 @@ mongoose.set("useFindAndModify", false);
 let notifications = [];
 let interval;
 let duration;
-let period;
 
 io.on("connection", (socket) => {
   console.log("New client connected");
@@ -57,7 +56,7 @@ io.on("connection", (socket) => {
   ];
 
   // Time period for showing a new notification (Random between 5-10 seconds)
-  period = getRandomTime(5, 10);
+  const period = getRandomTime(5, 10);
 
   // Time duration of showing the notification (Random between 1-4 seconds)
   duration = getRandomTime(1, 4);
@@ -90,7 +89,7 @@ io.on("connection", (socket) => {
     clearInterval(interval);
   });
 
-  socket.on("add-notification", function (data, callback) {
+  socket.on("dismiss", function (data, callback) {
     // store on DB clicked notifications for each user
     User.findOneAndUpdate(
       { userId: userId },
@@ -119,14 +118,13 @@ const emitNotification = (socket) => {
   const notification = notifications[index];
   if (notification) {
     notification.message = transformMessage(notification);
-    socket.emit("NotificationsAPI", {
+    socket.emit("notification", {
       ...notification,
       duration,
-      period,
       isEmpty: false,
     });
   } else {
-    socket.emit("NotificationsAPI", { notification: null, isEmpty: true });
+    socket.emit("notification", { notification: null, isEmpty: true });
   }
 };
 

@@ -20,28 +20,31 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<NotificationProps | null>(
     null
   );
-  const [isShown, setIsShown] = useState(true);
   const socket = useContext(SocketContext);
-  const [timer, setTimer] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [isSkipped, setIsSkipped] = useState(false);
 
   useEffect(() => {
-    setIsShown(true);
-    setTimeout(() => setIsShown(false), notification?.duration);
-    socket.on("NotificationsAPI", (data: NotificationProps) => {
+    const handler = (data: NotificationProps) => {
       setNotification(data);
-      if (data.period && data.duration) {
-        setTimer(data.period + data.duration);
-        setDuration(data.duration);
+      if (data.duration) {
+        setTimeout(() => {
+          setNotification(null);
+          if (isSkipped) {
+            setIsSkipped(false);
+          }
+        }, data.duration);
       }
-    });
-  }, [socket, notification]);
+    };
+    socket.on("notification", handler);
+    return () => {
+      socket.off("notification", handler);
+    };
+  }, [isSkipped, socket]);
 
   // The app should not display the next (one upcoming only) notification for the user
   const hideNotification = () => {
-    setTimeout(() => setIsSkipped(true), duration);
-    setTimeout(() => setIsSkipped(false), timer);
+    setIsSkipped(true);
+    setNotification(null);
   };
 
   if (notification?.isEmpty) {
@@ -59,7 +62,7 @@ const App: React.FC = () => {
   return (
     <>
       <Header />
-      {notification && isShown ? (
+      {notification ? (
         <>
           {!isSkipped ? (
             <Notification

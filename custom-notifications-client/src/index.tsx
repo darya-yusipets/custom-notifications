@@ -7,6 +7,7 @@ import { socket, SocketContext } from "./context/socket";
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
+
 root.render(
   <SocketContext.Provider value={socket}>
     <React.StrictMode>
